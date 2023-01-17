@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 
 void main() {
@@ -44,47 +46,70 @@ class _DrawingBoardState extends State<DrawingBoard> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: GestureDetector(
-        onPanStart: (details) {
-          setState(() {
-            drawingPoints.add(
-              DrawingPoint(
-                details.localPosition,
-                Paint()
-                  ..color = selectedColor
-                  ..isAntiAlias = true
-                  ..strokeWidth = strokeWidth
-                  ..strokeCap = StrokeCap.round,
-              ),
-            );
-          });
-        },
-        onPanUpdate: (details) {
-          setState(() {
-            drawingPoints.add(
-              DrawingPoint(
-                details.localPosition,
-                Paint()
-                  ..color = selectedColor
-                  ..isAntiAlias = true
-                  ..strokeWidth = strokeWidth
-                  ..strokeCap = StrokeCap.round,
-              ),
-            );
-          });
-        },
-        onPanEnd: (details) {
-          setState(() {
-            drawingPoints.add(null);
-          });
-        },
-        child: CustomPaint(
-          painter: _DrawingPainter(drawingPoints),
-          child: Container(
-            height: MediaQuery.of(context).size.height,
-            width: MediaQuery.of(context).size.width,
+      body: Stack(
+        children: [
+          GestureDetector(
+          onPanStart: (details) {
+            setState(() {
+              drawingPoints.add(
+                DrawingPoint(
+                  details.localPosition,
+                  Paint()
+                    ..color = selectedColor
+                    ..isAntiAlias = true
+                    ..strokeWidth = strokeWidth
+                    ..strokeCap = StrokeCap.round,
+                ),
+              );
+            });
+          },
+          onPanUpdate: (details) {
+            setState(() {
+              drawingPoints.add(
+                DrawingPoint(
+                  details.localPosition,
+                  Paint()
+                    ..color = selectedColor
+                    ..isAntiAlias = true
+                    ..strokeWidth = strokeWidth
+                    ..strokeCap = StrokeCap.round,
+                ),
+              );
+            });
+          },
+          onPanEnd: (details) {
+            setState(() {
+              drawingPoints.add(null);
+            });
+          },
+          child: CustomPaint(
+            painter: _DrawingPainter(drawingPoints),
+            child: Container(
+              height: MediaQuery.of(context).size.height,
+              width: MediaQuery.of(context).size.width,
+            ),
           ),
         ),
+        Positioned(
+            top: 40,
+            right: 30,
+            child: Row(
+              children: [
+                Slider(
+                  min: 0,
+                  max: 40,
+                  value: strokeWidth,
+                  onChanged: (val) => setState(() => strokeWidth = val),
+                ),
+                ElevatedButton.icon(
+                  onPressed: () => setState(() => drawingPoints = []),
+                  icon: Icon(Icons.clear),
+                  label: Text("Clear Board"),
+                )
+              ],
+            ),
+          ),
+        ],
       ),
       appBar: AppBar(
         title: Text('WhiteBoard'),
@@ -131,49 +156,31 @@ class _DrawingBoardState extends State<DrawingBoard> {
   }
 }
 
-class _DrawingPainter implements CustomPainter {
+class _DrawingPainter extends CustomPainter {
   final List<DrawingPoint> drawingPoints;
 
   _DrawingPainter(this.drawingPoints);
+
+  List<Offset> offsetsList = [];
+
   @override
   void paint(Canvas canvas, Size size) {
-    // TODO: implement paint
     for (int i = 0; i < drawingPoints.length; i++) {
       if (drawingPoints[i] != null && drawingPoints[i + 1] != null) {
         canvas.drawLine(drawingPoints[i].offset, drawingPoints[i + 1].offset,
             drawingPoints[i].paint);
+      } else if (drawingPoints[i] != null && drawingPoints[i + 1] == null) {
+        offsetsList.clear();
+        offsetsList.add(drawingPoints[i].offset);
+
+        canvas.drawPoints(
+            PointMode.points, offsetsList, drawingPoints[i].paint);
       }
     }
   }
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
-
-  @override
-  void addListener(VoidCallback listener) {
-    // TODO: implement addListener
-  }
-
-  @override
-  bool hitTest(Offset position) {
-    // TODO: implement hitTest
-    throw UnimplementedError();
-  }
-
-  @override
-  void removeListener(VoidCallback listener) {
-    // TODO: implement removeListener
-  }
-
-  @override
-  // TODO: implement semanticsBuilder
-  SemanticsBuilderCallback get semanticsBuilder => throw UnimplementedError();
-
-  @override
-  bool shouldRebuildSemantics(covariant CustomPainter oldDelegate) {
-    // TODO: implement shouldRebuildSemantics
-    throw UnimplementedError();
-  }
 }
 
 class DrawingPoint {
